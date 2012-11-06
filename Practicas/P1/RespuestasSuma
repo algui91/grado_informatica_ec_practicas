@@ -1,0 +1,4 @@
+#1 Contenido de EAX antes de RET
+	Contiene el número decimal 37
+	0b10 es el 2 decimal, 0x10 el 16 y (.-lista)/4 contiene la longitud de la lista de números, al ser enteros, cada uno ocupa 4B, por eso hay que dividir la logitud de la lista entre 4, para obtener el número de enteros que hay en el array
+#2 
