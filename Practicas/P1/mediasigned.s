@@ -5,14 +5,14 @@
 # SECCIÓN DE DATOS (.data, variables globales inicializadas)
 .section .data
 lista:
-	#.int	0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
-	.int	0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,0xf0000000, 0xe0000000, 0xe0000000, 0xd0000000,
-	#.int 0x0, 0x7fffffff
+	#.int	0xffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+	.int	0x0,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff,0xffffffff
 longlista:
 	.int	(.-lista)/4	# .= contador posiciones. Aritmética de etiquetas.
-resultado:
-	.quad   0		# 4B a FF para notar cuándo se modifica cada byte
-
+cociente:
+	.int   	0		# 4B a FF para notar cuándo se modifica cada byte
+resto:
+	.int	0
 # SECCIÓN DE CÓDIGO (.text, instrucciones máquina)
 .section .text
 _start:.global _start		# PROGRAMA PRINCIPAL-se puede abreviar de esta forma
@@ -20,8 +20,8 @@ _start:.global _start		# PROGRAMA PRINCIPAL-se puede abreviar de esta forma
 	mov     $lista, %ebx	# dirección del array lista
 	mov  longlista, %ecx	# número de elementos a sumar
 	call suma		# llamar suma(&lista, longlista);
-	mov  %eax,resultado	# salvar resultado
-	mov  %edx,resultado+4
+	mov  %eax,cociente	# salvar resultado
+	mov  %edx,resto
 
 	# void _exit(int status);
 	mov $1, %eax		#   exit: servicio 1 kernel Linux
@@ -50,5 +50,9 @@ bucle:
 
 	mov %edi, %edx		#Colocamos el resultado donde lo espera _start
 	mov %ebp, %eax
+	## División, idiv espera dividendo en EDX:EAX, q en eax, r en edx
+
+	idivl %ecx
+			
 	pop %edx			# recuperar %edx antiguo
 	ret
