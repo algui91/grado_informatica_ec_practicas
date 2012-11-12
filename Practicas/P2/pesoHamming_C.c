@@ -45,8 +45,8 @@ int hamming3(unsigned* array, int len)
         x = array[i];
         asm("\n"
         "ini3:                             \n\t"
-            "shr %[x], $0x1         \n\t"   //Desplazar afecta a CF ZF
-            "adc %[r], $0x0         \n\t"
+            "shr $0x1, %[x]        \n\t"   //Desplazar afecta a CF ZF
+            "adc $0x1, %[r]        \n\t"
             "test %[x], %[x]       \n\t"
             "jnz ini3 "
             
