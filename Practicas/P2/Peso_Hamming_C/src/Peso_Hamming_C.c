@@ -1,6 +1,6 @@
 /*
  ============================================================================
- Name        : Peso_Hamming_C.c
+ Name        : Peso_popcount_C.c
  Author      : Alex
  Version     :
  Copyright   : Your copyright notice
@@ -8,16 +8,16 @@
  ============================================================================
  */
 
-//gcc -m32 -O1 -fno-omit-frame-pointer pesoHamming_C.c -o pesoHamming_C
+//gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C
 #include <stdio.h>	// para printf()
 #include <stdlib.h>	// para exit()
 #include <sys/time.h>	// para gettimeofday(), struct timeval
 #define WSIZE 8*sizeof(int)
-#define SIZE 2//(1<<20)	// tamaño suficiente para tiempo apreciable
-unsigned lista[SIZE] = {0x10000000, 0xf0000000};// 0x00000003, 0x00000003};
+#define SIZE (1<<20)	// tamaño suficiente para tiempo apreciable
+unsigned lista[SIZE]; // = { 0x01010101 }; // 0x00000003, 0x00000003};
 int resultado = 0;
 
-int hamming1(unsigned* array, int len) {
+int popcount1(unsigned* array, int len) {
 	int i, k;
 	int result = 0;
 	for (k = 0; k < len; k++)
@@ -28,7 +28,7 @@ int hamming1(unsigned* array, int len) {
 	return result;
 }
 
-int hamming2(unsigned* array, int len) {
+int popcount2(unsigned* array, int len) {
 	int result = 0;
 	int i;
 	unsigned x;
@@ -42,7 +42,7 @@ int hamming2(unsigned* array, int len) {
 	return result;
 }
 
-int hamming3(unsigned* array, int len) {
+int popcount3(unsigned* array, int len) {
 	int result = 0;
 	int i;
 	unsigned x;
@@ -61,21 +61,62 @@ int hamming3(unsigned* array, int len) {
 	return result;
 }
 
-int hamming4(unsigned* array, int len) {
-	int val = 0;
-	int i, k;
+int popcount4(unsigned* array, int len) {
 
+	int i, k;
+	int result = 0;
 	for (i = 0; i < len; i++) {
+		int val = 0;
 		unsigned x = array[i];
-		for (k = 0; k < 4; k++) {
-			val += x & 0x01010101;
+		for (k = 0; k < 8; k++) {
+			val += x & 0x01010101; //00000001 00000001 00000001 00000001
 			x >>= 1;
 		}
+		//val += (val >> 32);
+		val += (val >> 16);
+		val += (val >> 8);
+		result += (val & 0xff);
 	}
-	val += (val >> 32);
-	val += (val >> 16);
-	val += (val >> 8);
-	return val & 0xFFFFFFFF;
+	return result;
+}
+/**
+ * Versión SSSE3 (pshufb) web http:/wm.ite.pl/articles/sse-popcount.html
+ */
+int popcount5(unsigned* array, int len) {
+	int i;
+	int val, result = 0;
+	int SSE_mask[] = { 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f };
+	int SSE_LUTb[] = { 0x02010100, 0x03020201, 0x03020201, 0x04030302 };
+
+	if (len & 0x3)
+		printf("leyendo 128b pero len no múltiplo de 4?\n");
+	for (i = 0; i < len; i += 4) {
+		asm("movdqu	   %[x], %%xmm0 \n\t"
+			"movdqa  %%xmm0, %%xmm1 \n\t"	// dos copias de x
+			"movdqu    %[m], %%xmm6 \n\t"	// máscara
+			"psrlw 		 $4, %%xmm1 \n\t"
+			"pand	 %%xmm6, %%xmm0 \n\t"	//; xmm0 – nibbles inferiores
+			"pand	 %%xmm6, %%xmm1 \n\t"	//; xmm1 – nibbles superiores
+
+			"movdqu    %[l], %%xmm2 \n\t"	//; ...como pshufb sobrescribe LUT
+			"movdqa  %%xmm2, %%xmm3 \n\t"	//; ...queremos 2 copias
+			"pshufb  %%xmm0, %%xmm2 \n\t"	//; xmm2 = vector popcount inferiores
+			"pshufb  %%xmm1, %%xmm3 \n\t"	//; xmm3 = vector popcount superiores
+
+			"paddb 	 %%xmm2, %%xmm3 \n\t"	//; xmm3 - vector popcount bytes
+			"pxor 	 %%xmm0, %%xmm0 \n\t"	//; xmm0 = 0,0,0,0
+			"psadbw  %%xmm0, %%xmm3 \n\t"	//;xmm3 = [pcnt bytes0..7|pcnt bytes8..15]
+			"movhlps %%xmm3, %%xmm0 \n\t"	//;xmm3 = [	     0		 |pcnt bytes0..7 ]
+			"paddd 	 %%xmm3, %%xmm0 \n\t"	//;xmm0 = [ no usado	 |pcnt bytes0..15]
+			"movd 	 %%xmm0, %[val] \n\t"
+			: [val]"=r" (val)
+			: [x] "m" (array[i]),
+			[m] "m" (SSE_mask[0]),
+			[l] "m" (SSE_LUTb[0])
+		);
+		result += val;
+	}
+	return result;
 }
 
 void crono(int (*func)(), char* msg) {
@@ -93,14 +134,15 @@ void crono(int (*func)(), char* msg) {
 
 int main() {
 	int i; // inicializar array
-//	for (i = 0; i < SIZE; i++) // se queda en cache
-//		lista[i] = i;
+	for (i = 0; i < SIZE; i++) // se queda en cache
+		lista[i] = SIZE - i;
 
-	//crono(hamming1, "Hamming1 (en lenguaje C for)");
-	//crono(hamming2, "Hamming2 (en lenguaje C whi)");
-	//crono(hamming3, "Hamming3 (Ahorrando máscara)");
-	crono(hamming4, "Hamming4 (Sumando bytes completos)");
-	//printf("N*(N+1)/2 = %d\n", (SIZE-1)*(SIZE/2)); /*OF*/
-	//printf("N*(N+1)/2 = %d\n", sizeof(long));
+	crono(popcount1, "popcount1 (en lenguaje C for)");
+	crono(popcount2, "popcount2 (en lenguaje C whi)");
+	crono(popcount3, "popcount3 (Ahorrando máscara)");
+	crono(popcount4, "popcount4 (Sumando bytes completos)");
+	crono(popcount5, "popcount5 (SSSE3)");
+//printf("N*(N+1)/2 = %d\n", (SIZE-1)*(SIZE/2)); /*OF*/
+//printf("N*(N+1)/2 = %d\n", sizeof(long));
 	exit(0);
 }
