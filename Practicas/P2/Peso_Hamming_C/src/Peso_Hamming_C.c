@@ -213,9 +213,9 @@ int main() {
 	crono(popcount3, "popcount3 (    Ahorrando máscara  )");
 	crono(popcount4, "popcount4 (Sumando bytes completos)");
 	crono(popcount5, "popcount5 (        SSSE3          )");
-	crono(popcount6, "popcount6 (        SSSE4.2        )");
-	crono(popcount7, "popcount7 (        SSSE4.2 64b    )");
-	crono(popcount10, "popcount10 (      SSSE4 mia      )");
+//	crono(popcount6, "popcount6 (        SSSE4.2        )");
+//	crono(popcount7, "popcount7 (        SSSE4.2 64b    )");
+//	crono(popcount10, "popcount10 (      SSSE4 mia      )");
 #if ! COPY_PASTE_CALC
 	printf("calculado = %d\n", RESULT);
 #endif
