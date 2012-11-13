@@ -9,12 +9,26 @@
  */
 
 //gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C
+#define TEST 0
+#define COPY_PASTE_CALC	0
+
+#if ! TEST
+	#define NBITS 20
+	#define SIZE (1<<NBITS) //Tamaño suficiente para tiempo apreciable
+	unsigned lista[SIZE];
+	#define RESULT 10485760
+#else
+	#define SIZE 4
+	unsigned lista[SIZE] = {0x80000000, 0x00100000, 0x00000800, 0x00000001};
+	#define RESULT 4
+#endif
+
 #include <stdio.h>	// para printf()
 #include <stdlib.h>	// para exit()
 #include <sys/time.h>	// para gettimeofday(), struct timeval
 #define WSIZE 8*sizeof(int)
-#define SIZE (1<<20)	// tamaño suficiente para tiempo apreciable
-unsigned lista[SIZE]; // = { 0x01010101 }; // 0x00000003, 0x00000003};
+//#define SIZE (1<<20)	// tamaño suficiente para tiempo apreciable
+//unsigned lista[SIZE]; // = { 0x01010101 }; // 0x00000003, 0x00000003};
 int resultado = 0;
 
 int popcount1(unsigned* array, int len) {
@@ -189,18 +203,22 @@ void crono(int (*func)(), char* msg) {
 }
 
 int main() {
+#if ! TEST
 	int i; // inicializar array
 	for (i = 0; i < SIZE; i++) // se queda en cache
 		lista[i] = i;
-
-	crono(popcount1, "popcount1 (en lenguaje C for)");
-	crono(popcount2, "popcount2 (en lenguaje C whi)");
-	crono(popcount3, "popcount3 (Ahorrando máscara)");
+#endif
+	crono(popcount1, "popcount1 (    en lenguaje C for  )");
+	crono(popcount2, "popcount2 (    en lenguaje C whi  )");
+	crono(popcount3, "popcount3 (    Ahorrando máscara  )");
 	crono(popcount4, "popcount4 (Sumando bytes completos)");
-	crono(popcount5, "popcount5 (SSSE3)");
-	crono(popcount6, "popcount6 (SSSE4.2)");
-	crono(popcount7, "popcount7 (SSSE4.2 64b)");
-	crono(popcount10, "popcount10 (SSSE4 mia)");
+	crono(popcount5, "popcount5 (        SSSE3          )");
+	crono(popcount6, "popcount6 (        SSSE4.2        )");
+	crono(popcount7, "popcount7 (        SSSE4.2 64b    )");
+	crono(popcount10, "popcount10 (      SSSE4 mia      )");
+#if ! COPY_PASTE_CALC
+	printf("calculado = %d\n", RESULT);
+#endif
 //printf("N*(N+1)/2 = %d\n", (SIZE-1)*(SIZE/2)); /*OF*/
 //printf("N*(N+1)/2 = %d\n", sizeof(long));
 	exit(0);
