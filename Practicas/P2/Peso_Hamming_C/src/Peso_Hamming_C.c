@@ -11,7 +11,7 @@
 //gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C
 //gcc -O0 -g -Wall -m32 -fno-omit-frame-pointer
 #define TEST 0
-#define COPY_PASTE_CALC 1
+#define COPY_PASTE_CALC 0
 
 #if ! TEST
         #define NBITS 20
