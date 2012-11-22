@@ -8,14 +8,14 @@
  ============================================================================
  */
 
-//gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C
-//gcc -O0 -g -Wall -Wextra -Wpedantic -m32 -fno-omit-frame-pointer
+/*gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C*/
+/*gcc -O0 -g -Wall -Wextra -Wpedantic -m32 -fno-omit-frame-pointer*/
 #define TEST 0
-#define COPY_PASTE_CALC 0
+#define COPY_PASTE_CALC 1
 
 #if ! TEST
 #define NBITS 20
-#define SIZE (1<<NBITS) //Tamaño suficiente para tiempo apreciable
+#define SIZE (1<<NBITS) /*Tamaño suficiente para tiempo apreciable*/
 unsigned lista[SIZE];
 #define RESULT 10485760
 #else
@@ -34,7 +34,7 @@ unsigned lista[SIZE];
 int resultado = 0;
 
 int paridad1(unsigned* array, int len) {
-	int i, j;
+	unsigned i, j;
 	int paridad;
 	unsigned entero;
 	int result = 0;
@@ -69,7 +69,74 @@ int paridad2(unsigned* array, int len) {
 	return result;
 }
 
+/*
+ * Versión C de CS:APP Ejercicio 3.22
+ */
 int paridad3(unsigned* array, int len) {
+
+	int val = 0;
+	int i;
+	unsigned x;
+	int result = 0;
+	for (i = 0; i < len; i++) {
+		x = array[i];
+		while (x) {
+			val ^= x;
+			x >>= 1;
+		}
+		result += val & 0x1;
+	}
+	return result;
+
+}
+
+/*
+ * Versión C de CS:APP Ejercicio 3.22 (Traduciendo while)
+ */
+int paridad4(unsigned* array, int len) {
+
+	int val;
+	int i;
+	unsigned x;
+	int result = 0;
+
+	for (i = 0; i < len; i++) {
+		x = array[i];
+		val = 0;
+		asm(
+			"ini3:						\n\t"
+				"xor %[x], %[v]			\n\t"
+				"shr $1, %[x]			\n\t"
+				"test %[x], %[x]        \n\t"
+				"jnz ini3				\n\t"
+				: [v]"+r"(val) // e/s: inicialemnte 0, salida valor final
+				: [x]"r"(x)// entrada: valor del elemento
+		);
+		result += val;
+	}
+	return result;
+
+}
+
+/**
+ * Sumando en árbol
+ */
+int paridad5(unsigned* array, int len) {
+
+	int i, k;
+	int result = 0;
+	unsigned x;
+	for (i = 0; i < len; i++) {
+		x = array[i];
+		for (k = 16; k ==1 ; k/=2)
+			x^=x>>k;
+		result += (x & 0x01);
+	}
+	return result;
+
+}
+
+int paridad6(unsigned* array, int len) {
 	int j;
 	unsigned entero = 0;
 	char paridad = 0;
@@ -90,28 +157,6 @@ int paridad3(unsigned* array, int len) {
 	}
 
 	return resultado;
-}
-
-/*
- * Versión C de CS:APP
- */
-int popcount4(unsigned* array, int len) {
-
-	int i, k;
-	int result = 0;
-	for (i = 0; i < len; i++) {
-		int val = 0;
-		unsigned x = array[i];
-		for (k = 0; k < 8; k++) {
-			val += x & 0x01010101; //00000001 00000001 00000001 00000001
-			x >>= 1;
-		}
-		//val += (val >> 32);
-		val += (val >> 16);
-		val += (val >> 8);
-		result += (val & 0xff);
-	}
-	return result;
 }
 
 /**
@@ -218,15 +263,9 @@ int main() {
 #endif
 	crono(paridad1, "Paridad1 (    en lenguaje C for  )");
 	crono(paridad2, "Paridad2 (    en lenguaje C whi  )");
-	crono(paridad3, "Paridad3 (    Ahorrando máscara  )");
-//	crono(popcount4, "popcount4 (Sumando bytes completos)");
-//	crono(popcount5, "popcount5 (        SSSE3          )");
-//	crono(popcount6, "popcount6 (        SSSE4.2        )");
-//	crono(popcount7, "popcount7 (        SSSE4.2 64b    )");
-//#if ! COPY_PASTE_CALC
-//        printf("calculado = %d\n", RESULT);
-//#endif
-//printf("N*(N+1)/2 = %d\n", (SIZE-1)*(SIZE/2)); /*OF*/
-//printf("N*(N+1)/2 = %d\n", sizeof(long));
+	crono(paridad3, "Paridad3 (Ejemplo CS:APP Ej: 3.22)");
+	crono(paridad4, "Paridad4 (Traducción bucle While )");
+	crono(paridad5, "Paridad5 (      Suma en árbol    )");
+	crono(paridad6, "Paridad4 (Bucle interno con setpe)");
 	exit(0);
 }
