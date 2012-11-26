@@ -11,7 +11,7 @@
 /*gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C*/
 /*gcc -O0 -g -Wall -Wextra -Wpedantic -m32 -fno-omit-frame-pointer*/
 #define TEST 0
-#define COPY_PASTE_CALC 1
+#define COPY_PASTE_CALC 0
 
 #if ! TEST
 #define NBITS 20
@@ -46,7 +46,7 @@ int paridad1(unsigned* array, int len) {
 			paridad ^= (entero & 1);
 			entero >>= 1;
 		}
-		result += paridad;
+		result += paridad & 0x01;
 	}
 	return result;
 }
@@ -64,7 +64,7 @@ int paridad2(unsigned* array, int len) {
 			paridad ^= (entero & 1);
 			entero >>= 1;
 		}
-		result += paridad;
+		result += paridad & 0x1;
 	}
 	return result;
 }
@@ -104,7 +104,7 @@ int paridad4(unsigned* array, int len) {
 		x = array[i];
 		val = 0;
 		asm(
-			"ini3:						\n\t"
+				"ini3:						\n\t"
 				"xor %[x], %[v]			\n\t"
 				"shr $1, %[x]			\n\t"
 				"test %[x], %[x]        \n\t"
@@ -112,7 +112,7 @@ int paridad4(unsigned* array, int len) {
 				: [v]"+r"(val) // e/s: inicialemnte 0, salida valor final
 				: [x]"r"(x)// entrada: valor del elemento
 		);
-		result += val;
+		result += val & 0x1;
 	}
 	return result;
 
@@ -128,18 +128,28 @@ int paridad5(unsigned* array, int len) {
 	unsigned x;
 	for (i = 0; i < len; i++) {
 		x = array[i];
-		for (k = 16; k ==1 ; k/=2)
-			x^=x>>k;
+		for (k = 16; k == 1; k /= 2)
+			x ^= x >> k;
 		result += (x & 0x01);
 	}
 	return result;
 
 }
 
+/**
+ * Se hace una copia de x.
+ Se desplaza la copia de x 16 bits a la derecha.
+ Se hace xor entre x y su copia desplazada, obteniendo un resultado.
+ Se hace una copia del resultado.
+ Se desplaza la copia del resultado 8 bits a la derecha.
+ Se hace xor entre el resultado y su copia desplazada.
+ Se hace setpo.
+ */
+
 int paridad6(unsigned* array, int len) {
 	int j;
 	unsigned entero = 0;
-	char paridad = 0;
+
 
 	int resultado = 0;
 
@@ -147,95 +157,22 @@ int paridad6(unsigned* array, int len) {
 
 		entero = array[j]; //Cargo en entero el siguiente numero de la lista
 		asm(
-				"    test %[val], %[val]   \n"
-				"    setpe %[par]          \n" //o setpe
-
-				: [par] "+r" (paridad)// output-input
-				: [val] "r" (entero)// input
+				"mov	%[x], 	%%edx		\n\t"
+				"shr	$16,	%%edx		\n\t"
+				"xor	%[x],	%%edx		\n\t"
+				"mov	%%edx,	%%edi		\n\t"
+				"shr	$8,		%%edi		\n\t"
+				"xor	%%edi,	%%edx		\n\t"
+				"setpo  %%dl				\n\t"
+				"movzx	%%dl,	%[x]		\n\t"
+				: [x] "+r" (entero) // input
+				:
+				: "edx"//Clobber
 		);
-		resultado += paridad;
+		resultado += entero;
 	}
 
 	return resultado;
-}
-
-/**
- * Versión SSSE3 (pshufb) web http:/wm.ite.pl/articles/sse-popcount.html
- */
-int popcount5(unsigned* array, int len) {
-	int i;
-	int val, result = 0;
-	int SSE_mask[] = { 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f };
-	int SSE_LUTb[] = { 0x02010100, 0x03020201, 0x03020201, 0x04030302 };
-
-	if (len & 0x3)
-		printf("leyendo 128b pero len no múltiplo de 4?\n");
-	for (i = 0; i < len; i += 4) {
-		asm("movdqu        %[x], %%xmm0 \n\t"
-				"movdqa  %%xmm0, %%xmm1 \n\t" // dos copias de x
-				"movdqu    %[m], %%xmm6 \n\t"// máscara
-				"psrlw           $4, %%xmm1 \n\t"
-				"pand    %%xmm6, %%xmm0 \n\t"//; xmm0 – nibbles inferiores
-				"pand    %%xmm6, %%xmm1 \n\t"//; xmm1 – nibbles superiores
-
-				"movdqu    %[l], %%xmm2 \n\t"//; ...como pshufb sobrescribe LUT
-				"movdqa  %%xmm2, %%xmm3 \n\t"//; ...queremos 2 copias
-				"pshufb  %%xmm0, %%xmm2 \n\t"//; xmm2 = vector popcount inferiores
-				"pshufb  %%xmm1, %%xmm3 \n\t"//; xmm3 = vector popcount superiores
-
-				"paddb   %%xmm2, %%xmm3 \n\t"//; xmm3 - vector popcount bytes
-				"pxor    %%xmm0, %%xmm0 \n\t"//; xmm0 = 0,0,0,0
-				"psadbw  %%xmm0, %%xmm3 \n\t"//;xmm3 = [pcnt bytes0..7|pcnt bytes8..15]
-				"movhlps %%xmm3, %%xmm0 \n\t"//;xmm3 = [             0           |pcnt bytes0..7 ]
-				"paddd   %%xmm3, %%xmm0 \n\t"//;xmm0 = [ no usado        |pcnt bytes0..15]
-				"movd    %%xmm0, %[val] \n\t"
-				: [val]"=r" (val)
-				: [x] "m" (array[i]),
-				[m] "m" (SSE_mask[0]),
-				[l] "m" (SSE_LUTb[0])
-		);
-		result += val;
-	}
-	return result;
-}
-/**
- * Versión SSE4.2 (popcount)
- */
-int popcount6(unsigned* array, int len) {
-	int i;
-	unsigned x;
-	int val, result = 0;
-	for (i = 0; i < len; i++) {
-		x = array[i];
-		asm("popcnt %[x], %[val]        \n\t"
-				: [val]"=r"(val)
-				: [x] "r" (x)
-		);
-		result += val;
-	}
-	return result;
-}
-
-int popcount7(unsigned* array, int len) {
-	int i;
-	unsigned x1, x2;
-	int val, result = 0;
-	if (len & 0x1)
-		printf("Leer 64b y len impar?\n");
-	for (i = 0; i < len; i += 2) {
-		x1 = array[i];
-		x2 = array[i + 1];
-		asm("popcnt %[x1], %[val]       \n\t"
-				"popcnt %[x2], %%edi    \n\t"
-				"add    %%edi, %[val]   \n\t"
-				: [val]"=r"(val)
-				: [x1] "r" (x1),
-				[x2] "r" (x2)
-				: "edi"
-		);
-		result += val;
-	}
-	return result;
 }
 
 void crono(int (*func)(), char* msg) {
@@ -261,11 +198,11 @@ int main() {
 	for (i = 0; i < SIZE; i++) // se queda en cache
 		lista[i] = i;
 #endif
-	crono(paridad1, "Paridad1 (    en lenguaje C for  )");
-	crono(paridad2, "Paridad2 (    en lenguaje C whi  )");
-	crono(paridad3, "Paridad3 (Ejemplo CS:APP Ej: 3.22)");
-	crono(paridad4, "Paridad4 (Traducción bucle While )");
-	crono(paridad5, "Paridad5 (      Suma en árbol    )");
-	crono(paridad6, "Paridad4 (Bucle interno con setpe)");
+//	crono(paridad1, "Paridad1 (    en lenguaje C for  )");
+//	crono(paridad2, "Paridad2 (    en lenguaje C whi  )");
+//	crono(paridad3, "Paridad3 (Ejemplo CS:APP Ej: 3.22)");
+//	crono(paridad4, "Paridad4 (Traducción bucle While )");
+//	crono(paridad5, "Paridad5 (      Suma en árbol    )");
+	crono(paridad6, "Paridad6 (Bucle interno con setpe)");
 	exit(0);
 }
