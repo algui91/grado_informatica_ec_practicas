@@ -150,9 +150,7 @@ int paridad6(unsigned* array, int len) {
 				"mov	%[x], 	%%edx		\n\t"
 				"shr	$16,	%%edx		\n\t"
 				"xor	%[x],	%%edx		\n\t"
-				"mov	%%edx,	%%edi		\n\t"
-				"shr	$8,		%%edi		\n\t"
-				"xor	%%edi,	%%edx		\n\t"
+				"xor	%%dh,	%%dl		\n\t"
 				"setpo  %%dl				\n\t"
 				"movzx	%%dl,	%[x]		\n\t"
 				: [x] "+r" (entero) // input
@@ -161,7 +159,6 @@ int paridad6(unsigned* array, int len) {
 		);
 		resultado += entero;
 	}
-
 	return resultado;
 }
 
