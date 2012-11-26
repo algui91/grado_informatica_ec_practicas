@@ -11,7 +11,7 @@
 /*gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C*/
 /*gcc -O0 -g -Wall -Wextra -Wpedantic -m32 -fno-omit-frame-pointer*/
 #define TEST 0
-#define COPY_PASTE_CALC 0
+#define COPY_PASTE_CALC 1
 
 #if ! TEST
 #define NBITS 20
@@ -52,7 +52,7 @@ int paridad1(unsigned* array, int len) {
 }
 
 int paridad2(unsigned* array, int len) {
-	int i, j;
+	int i;
 	int paridad;
 	unsigned entero;
 	int result = 0;
@@ -136,16 +136,6 @@ int paridad5(unsigned* array, int len) {
 
 }
 
-/**
- * Se hace una copia de x.
- Se desplaza la copia de x 16 bits a la derecha.
- Se hace xor entre x y su copia desplazada, obteniendo un resultado.
- Se hace una copia del resultado.
- Se desplaza la copia del resultado 8 bits a la derecha.
- Se hace xor entre el resultado y su copia desplazada.
- Se hace setpo.
- */
-
 int paridad6(unsigned* array, int len) {
 	int j;
 	unsigned entero = 0;
@@ -198,11 +188,11 @@ int main() {
 	for (i = 0; i < SIZE; i++) // se queda en cache
 		lista[i] = i;
 #endif
-//	crono(paridad1, "Paridad1 (    en lenguaje C for  )");
-//	crono(paridad2, "Paridad2 (    en lenguaje C whi  )");
-//	crono(paridad3, "Paridad3 (Ejemplo CS:APP Ej: 3.22)");
-//	crono(paridad4, "Paridad4 (Traducción bucle While )");
-//	crono(paridad5, "Paridad5 (      Suma en árbol    )");
+	crono(paridad1, "Paridad1 (    en lenguaje C for  )");
+	crono(paridad2, "Paridad2 (    en lenguaje C whi  )");
+	crono(paridad3, "Paridad3 (Ejemplo CS:APP Ej: 3.22)");
+	crono(paridad4, "Paridad4 (Traducción bucle While )");
+	crono(paridad5, "Paridad5 (      Suma en árbol    )");
 	crono(paridad6, "Paridad6 (Bucle interno con setpe)");
 	exit(0);
 }
