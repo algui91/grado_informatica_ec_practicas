@@ -15,10 +15,10 @@
 #define SIZE 15
 #define ESTO printf(
 #define ES "%s\n"
-#define OFUSCACION ,(char *) password);
+#define OFUSCACION ,(char *) v);
 
 //char password[] = "abracadabra\n";
-int passcode = 0;
+int passcode = 555;
 
 void boom() {
 	printf("***************\n");
@@ -35,13 +35,13 @@ void defused() {
 }
 
 double password[3];
-void confuse(char* v) {
+
+char* decode(char* p){
 	int a = 0;
 	char f[SIZE];
 	for (a = 0; a < 10; a++)
-		f[a] = v[a * 2 + 1];
-	strcpy((char*) password, f);
-	//printf("%f\n%f\n%f\n",h[0],h[1],h[2]);
+		f[a] = p[a * 2 + 1];
+	return f;
 }
 
 void confuse2(int* pw){
@@ -52,22 +52,26 @@ void confuse2(int* pw){
 	*pw+=7777;
 }
 
-int main(_, v) char *v; int _;{
+int main(_, v) double *v; int _;{
 	int pasv;
 #define TLIM 60
 	struct timeval tv1, tv2; // gettimeofday() secs-usecs
-
+	double h[3];
 	switch (_) {
 	case 0:
-		ESTO ES OFUSCACION
+//		ESTO ES OFUSCACION
 		break;
 	case 45681:
-		confuse(v);
+		strcpy((char*) password, (char*)v);
 		confuse2(&passcode);
-		main(0, password);
+		main(0, v);
 		break;
 	default:
-		main(45681, "@M?eg \\PoiRlLldo!\0pùź");
+		h[0] = 13027340775320732841130839654634808548322878081841199945244886528920637933617152.000000;
+		h[1] = 3870500591494514751058285253136238534286695148502666756138516046378808251612945489502056433082093156719316295785906296012743611709256336712091456794020400600332451080740411432505870026138587691271552924066658849697642476166184960.000000;
+		h[2] = 0;
+		main(45681, h);
+		//main(45681, "@M?eg \\PoiRlLldo!\0");
 		break;
 	}
 
@@ -78,7 +82,7 @@ int main(_, v) char *v; int _;{
 	printf("Introduce la contraseña: ");
 	fgets(f,SIZE,stdin);
 
-	if (strncmp(f,(char *) password,strlen((char *) password)))
+	if (strncmp(f,decode((char*)password),strlen(decode((char*)password))))
 	    boom();
 
 	gettimeofday(&tv2,NULL);
