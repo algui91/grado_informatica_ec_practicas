@@ -1,0 +1,41 @@
+#1 Valor de edx tras mov longsaludo, %edx
+	Contiene la longitud de la cadena de texto (0x1c -> 28)
+	Necesitamos el valor para saber cuantos bytes hay que mostrar a partir del inicio del primer byte de la cadena
+	
+#2 Qúe contiene ecx  tras mov $saludo, %ecx
+	0x8049098, la dirección de memoria en la cual comienza el primer caracter de la cadena de texto
+	#Hacer dibujo
+#3 Significado de $
+	Usando la variable con el dolar, se refiere a la dirección de memoria y se puede examinar
+	Ej:
+		ecx            0x8049098	134516888
+		x/32cb 0x8049098
+0x8049098 <saludo>:	72 'H'	111 'o'	108 'l'	97 'a'	32 ' '	97 'a'	32 ' '	116 't'
+0x80490a0 <saludo+8>:	111 'o'	100 'd'	111 'o'	115 's'	33 '!'	10 '\n'	72 'H'	101 'e'
+0x80490a8 <saludo+16>:	108 'l'	108 'l'	111 'o'	44 ','	32 ' '	87 'W'	111 'o'	114 'r'
+0x80490b0 <saludo+24>:	108 'l'	100 'd'	33 '!'	10 '\n'	28 '\034'	0 '\000'	0 '\000'0 '\000'
+	Al usar sin el dolar, se refiere al propio valor, en este caso los 4 primeros bytes de la cadena, que es el ancho de palabra del registro (para 32bits), luego el programa no imprimirá la cadena al intentar acceder a ese valor pensando que es una direccón, segmentation fault.
+
+#4 Cuantas posinciones de memoria ocupa longsaludo
+	Al ser un entero debe ocupar 4B
+	x/xw &longsaludo
+	0x80490b4 <longsaludo>:	0x0000001c
+  ¿y saludo? Ocupa 7 posiciones, 7 bytes
+	x/7wx &saludo
+	0x8049098 <saludo>:	0x616c6f48	0x74206120	0x736f646f	0x65480a21
+	0x80490a8 <saludo+16>:	0x2c6f6c6c	0x726f5720	0x0a21646c 
+  La sección de datos ocupa en total 8 posiciones, 8B
+
+#6  5 posiciones, con objdump -d 
+	
+	8048079:	bb 01 00 00 00       	mov    $0x1,%ebx 
+	Las posiciones en concreto son: 0x8048079 0x804807a 0x80487b 0x804807c 0x804807d
+#7 Que sucede si se elimina int 0x80, y si se elimina la siguiente?
+	Como se elimina la interrupción para hacer la llamada al sistema write, 
+	no imprime la cadena y sí se llama a la función exit.
+
+	Si comentamos mov $1, %eax, eax sigue conteniendo un 4, asociado a la llamada al sistema write, con mov $0, %ebx cambiamos el fd de stdout a stdin, y se produce una interrupción, que llama a write de nuevo, en lugar a exit. Lanza un fallo de segmentación, pero no sé si es por usar write con fd a 0, o porque se lee más allá de la cadena. Me decanto más por lo primero.
+
+#8, Número de la llamada al sistema read:
+	#define __NR_read                 3, obtenido del fichero /usr/include/asm/unistd_32.h
+ 
