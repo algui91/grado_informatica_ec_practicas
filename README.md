@@ -1,4 +1,3 @@
-EC
 ==
-
-Ejercicios sobre la asignatura Estructura de Computadores de la Universidad de Granada
+# Ejercicios sobre la asignatura Estructura de Computadores de la Universidad de Granada
+==
