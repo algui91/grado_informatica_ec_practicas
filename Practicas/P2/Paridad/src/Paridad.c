@@ -3,8 +3,6 @@
  Name        : Paridad.c
  Author      : Alejandro
  Version     :
- Copyright   : 
- Description : Hello World in C, Ansi-style
  ============================================================================
  */
 

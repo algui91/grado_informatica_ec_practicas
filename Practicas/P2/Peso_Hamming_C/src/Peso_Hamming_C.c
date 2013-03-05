@@ -1,15 +1,14 @@
 /*
  ============================================================================
  Name        : Peso_popcount_C.c
- Author      : Alex
+ Author      : Alejandro Alcalde
  Version     :
- Copyright   : Your copyright notice
- Description : Hello World in C, Ansi-style
+ Licence   : GPL
+ Description : PopCount optimizations
  ============================================================================
  */
 
-//gcc -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C
-//gcc -O0 -g -Wall -m32 -fno-omit-frame-pointer
+//gcc -Wall -m32 -O1 -fno-omit-frame-pointer pesopopcount_C.c -o pesopopcount_C
 #define TEST 0
 #define COPY_PASTE_CALC 0
 
@@ -28,8 +27,6 @@
 #include <stdlib.h>     // para exit()
 #include <sys/time.h>   // para gettimeofday(), struct timeval
 #define WSIZE 8*sizeof(int)
-//#define SIZE (1<<20)  // tamaño suficiente para tiempo apreciable
-//unsigned lista[SIZE]; // = { 0x01010101 }; // 0x00000003, 0x00000003};
 int resultado = 0;
 
 int popcount1(unsigned* array, int len) {
@@ -207,10 +204,5 @@ int main() {
         crono(popcount5, "popcount5 (        SSSE3          )");
         crono(popcount6, "popcount6 (        SSSE4.2        )");
         crono(popcount7, "popcount7 (        SSSE4.2 64b    )");
-//#if ! COPY_PASTE_CALC
-//        printf("calculado = %d\n", RESULT);
-//#endif
-//printf("N*(N+1)/2 = %d\n", (SIZE-1)*(SIZE/2)); /*OF*/
-//printf("N*(N+1)/2 = %d\n", sizeof(long));
         exit(0);
 }

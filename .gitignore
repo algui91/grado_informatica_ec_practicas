@@ -1,3 +1,17 @@
-*.o 
-*.*~
-Practicas/P2/Peso_Hamming_C/Debug/src/Peso_Hamming_C.o
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app

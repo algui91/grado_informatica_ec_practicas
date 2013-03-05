@@ -1,5 +1,5 @@
 #b main
-b decode
+#b decode
 b *0x80486b6
 display /wx $eip
 #display /d $ecx

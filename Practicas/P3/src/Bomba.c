@@ -38,7 +38,9 @@ double password[3];
 
 char* decode(char* p){
 	int a = 0;
-	char f[SIZE];
+	char* f;
+	f = (char*) malloc(sizeof(char)*SIZE);
+
 	for (a = 0; a < 10; a++)
 		f[a] = p[a * 2 + 1];
 	return f;
